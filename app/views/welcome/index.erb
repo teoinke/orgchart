@@ -10,14 +10,14 @@
   }
    
   .node circle {
-    fill: #fff;
+    fill: #00fffff;
     stroke: steelblue;
     stroke-width: 1.5px;
   }
    
   .node image {
-  	margin-top: 20px;
-  	padding-bottom: 20px;
+  	margin-top: 35px;
+  	padding-bottom: 35px;
   }
 
   .node text {
@@ -52,6 +52,25 @@
 </p>
 
 <div id="tree-container"></div>
+
+<div id="testes">
+Testandoooo <br>
+  <svg width="700" height="660">
+  <defs>
+      <filter id = "i1" x = "0%" y = "0%" width = "100%" height = "100%">
+        <feImage xlink:href = "/assets/foto.png"/>
+      </filter>
+
+      <pattern id="innerImage" x="50" y="50" height="10" width="10">
+        <image x="30" y="30" xlink:href='/assets/foto.jpg'></image>
+      </pattern>
+    </defs>
+    <circle id='top' cx="50" cy="50" r="80" fill="url(#i1)"/>
+  </svg>
+</div>
+<br>
+Testandoooo mais um <br>
+
 
 <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js"></script>

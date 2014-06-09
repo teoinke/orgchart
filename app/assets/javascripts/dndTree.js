@@ -18,10 +18,14 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
     var paddingX = 100;
     var paddingY = 100;
 
+    var pixelsPerLine = 40;
+
+    var circleRadius = 12;
+    var nodeCircleChildrenFill = "#000000" // was "lightsteelblue"
+    var nodeCircleNoChildrenFill = "#000000" // was "#fff"
+
     // size of the diagram
-    //var viewerWidth = $(document).width();
     var viewerWidth = $("#tree-container").width();
-    //var viewerHeight = $(document).height();
     var viewerHeight = $("#tree-container").height();
 
     var tree = d3.layout.tree()
@@ -357,7 +361,7 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
             }
         };
         childCount(0, root);
-        var newHeight = d3.max(levelWidth) * 25; // 25 pixels per line  
+        var newHeight = d3.max(levelWidth) * pixelsPerLine; // 25 pixels per line  
         tree = tree.size([newHeight, viewerWidth]);
 
         // Compute the new tree layout.
@@ -387,19 +391,53 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
             })
             .on('click', click);
 
-        nodeEnter.append("image")
-            .attr('xlink:href', '/assets/foto.jpg')
-            .attr('width', '40px')
-            .attr('height', '40px')
-            .attr('margin-bottom', '30px')
-            ;
+        // nodeEnter.append("image")
+        //     .attr('xlink:href', '/assets/foto.jpg')
+        //     .attr("x", -20)
+        //     .attr("y", -20)
+        //     .attr('width', '25px')
+        //     .attr('height', '25px')
+        //     .attr('margin-bottom', '30px')
+        //     ;
 
+        // var nodeEnterCircle = nodeEnter.append("circle")
         nodeEnter.append("circle")
             .attr('class', 'nodeCircle')
             .attr("r", 0)
             .style("fill", function(d) {
-                return d._children ? "lightsteelblue" : "#fff";
-            });
+                return "#00000000" //d._children ? "lightsteelblue" : "#00ffffff";
+            })
+            .append('svg:pattern')
+            .attr('id', 'foto')
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('width', '7')
+            .attr('height', '9')
+            .append('svg:image')
+            .attr('xlink:href', '/assets/foto.png')
+
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', 7)
+            .attr('height', 9);
+
+            // .append('svg:image')
+            // .attr('xlink:href', '/assets/foto.png')
+            // .attr('x', 0)
+            // .attr('y', 0)
+            // .attr('width', 6)
+            // .attr('height', 6);
+            
+
+        // nodeEnterCircle.append("image")
+        //     .attr('xlink:href', '/assets/foto.jpg')
+        //     .attr("x", -20)
+        //     .attr("y", -20)
+        //     .attr('width', '25px')
+        //     .attr('height', '25px')
+        //     .attr('margin-bottom', '30px');
+
+        
+
 
         nodeEnter.append("text")
             .attr("x", function(d) {
@@ -443,9 +481,9 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
 
         // Change the circle fill depending on whether it has children and is collapsed
         node.select("circle.nodeCircle")
-            .attr("r", 4.5)
+            .attr("r", circleRadius)
             .style("fill", function(d) {
-                return d._children ? "lightsteelblue" : "#fff";
+                return d._children ? nodeCircleChildrenFill : nodeCircleNoChildrenFill;
             });
 
         // Transition nodes to their new position.
