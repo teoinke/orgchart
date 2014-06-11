@@ -1,4 +1,5 @@
 // Get JSON data
+
 treeJSON = d3.json("assets/flare.json", function(error, treeData) {
 
     // Calculate total nodes, max label length
@@ -12,15 +13,38 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
     var panBoundary = 20; // Within 20px from edges will pan when dragging.
     // Misc. variables
     var i = 0;
-    var duration = 750;
+    var duration = 450; // it was 750
     var root;
 
     var paddingX = 100;
     var paddingY = 100;
 
-    var pixelsPerLine = 40;
+    var pixelsPerLine = 80;
 
-    var circleRadius = 12;
+    // Circle variables
+    var circleDiameter= 40;
+    var circleRadius = circleDiameter / 2;
+    var circlePositionX = circleDiameter / 10;
+    var circlePositionY = circleDiameter / 4;
+    var circlePhotoRadius = circleDiameter;
+
+    var circleClassParent = "parent";
+    var circleClassLeaf = "leaf";
+
+    // Photo scale variables
+    var imgUrl = '/assets/rsz_1foto.jpg'; // rsz_1foto
+    var thumbnailWidth = 165; // 165; // Raw values of the image size
+    var thumbnailHeight = 185; // 185; // Raw values of the image size
+    var thumbnailRatio = thumbnailHeight / thumbnailWidth;
+    var imgPatternWidth = circlePhotoRadius;
+    var imgPatternHeight = circlePhotoRadius * thumbnailRatio;
+    var imgImageWidth = circlePhotoRadius / thumbnailRatio;
+    var imgImageHeight = circlePhotoRadius;
+    var imgCircleCenterX = (circlePhotoRadius / thumbnailRatio) / 2;
+    var imgCircleCenterY = (circlePhotoRadius / thumbnailRatio) / 2;
+    var imgCircleRadius = (circlePhotoRadius / thumbnailRatio) / 2;
+
+
     var nodeCircleChildrenFill = "#000000" // was "lightsteelblue"
     var nodeCircleNoChildrenFill = "#000000" // was "#fff"
 
@@ -161,96 +185,98 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
 
 
     // Define the drag listeners for drag/drop behaviour of nodes.
-    dragListener = d3.behavior.drag()
-        .on("dragstart", function(d) {
-            if (d == root) {
-                return;
-            }
-            dragStarted = true;
-            nodes = tree.nodes(d);
-            d3.event.sourceEvent.stopPropagation();
-            // it's important that we suppress the mouseover event on the node being dragged. Otherwise it will absorb the mouseover event and the underlying node will not detect it d3.select(this).attr('pointer-events', 'none');
-        })
-        .on("drag", function(d) {
-            if (d == root) {
-                return;
-            }
-            if (dragStarted) {
-                domNode = this;
-                initiateDrag(d, domNode);
-            }
+    dragListener = d3.behavior.drag();
+    //     .on("dragstart", function(d) {
+    //         if (d == root) {
+    //             return;
+    //         }
+    //         dragStarted = true;
+    //         nodes = tree.nodes(d);
+    //         d3.event.sourceEvent.stopPropagation();
+    //         // it's important that we suppress the mouseover event on the node being dragged. Otherwise it will absorb the mouseover event and the underlying node will not detect it d3.select(this).attr('pointer-events', 'none');
+    //     })
+    //     .on("drag", function(d) {
+    //         if (d == root) {
+    //             return;
+    //         }
+    //         if (dragStarted) {
+    //             domNode = this;
+    //             initiateDrag(d, domNode);
+    //         }
 
-            // get coords of mouseEvent relative to svg container to allow for panning
-            relCoords = d3.mouse($('svg').get(0));
-            if (relCoords[0] < panBoundary) {
-                panTimer = true;
-                pan(this, 'left');
-            } else if (relCoords[0] > ($('svg').width() - panBoundary)) {
+    //         // get coords of mouseEvent relative to svg container to allow for panning
+    //         relCoords = d3.mouse($('svg').get(0));
+    //         if (relCoords[0] < panBoundary) {
+    //             panTimer = true;
+    //             pan(this, 'left');
+    //         } else if (relCoords[0] > ($('svg').width() - panBoundary)) {
 
-                panTimer = true;
-                pan(this, 'right');
-            } else if (relCoords[1] < panBoundary) {
-                panTimer = true;
-                pan(this, 'up');
-            } else if (relCoords[1] > ($('svg').height() - panBoundary)) {
-                panTimer = true;
-                pan(this, 'down');
-            } else {
-                try {
-                    clearTimeout(panTimer);
-                } catch (e) {
+    //             panTimer = true;
+    //             pan(this, 'right');
+    //         } else if (relCoords[1] < panBoundary) {
+    //             panTimer = true;
+    //             pan(this, 'up');
+    //         } else if (relCoords[1] > ($('svg').height() - panBoundary)) {
+    //             panTimer = true;
+    //             pan(this, 'down');
+    //         } else {
+    //             try {
+    //                 clearTimeout(panTimer);
+    //             } catch (e) {
 
-                }
-            }
+    //             }
+    //         }
 
-            d.x0 += d3.event.dy;
-            d.y0 += d3.event.dx;
-            var node = d3.select(this);
-            node.attr("transform", "translate(" + d.y0 + "," + d.x0 + ")"); // ------ Padding when dragging
-            updateTempConnector();
-        }).on("dragend", function(d) {
-            if (d == root) {
-                return;
-            }
-            domNode = this;
-            if (selectedNode) {
-                // now remove the element from the parent, and insert it into the new elements children
-                var index = draggingNode.parent.children.indexOf(draggingNode);
-                if (index > -1) {
-                    draggingNode.parent.children.splice(index, 1);
-                }
-                if (typeof selectedNode.children !== 'undefined' || typeof selectedNode._children !== 'undefined') {
-                    if (typeof selectedNode.children !== 'undefined') {
-                        selectedNode.children.push(draggingNode);
-                    } else {
-                        selectedNode._children.push(draggingNode);
-                    }
-                } else {
-                    selectedNode.children = [];
-                    selectedNode.children.push(draggingNode);
-                }
-                // Make sure that the node being added to is expanded so user can see added node is correctly moved
-                expand(selectedNode);
-                sortTree();
-                endDrag();
-            } else {
-                endDrag();
-            }
-        });
+    //         d.x0 += d3.event.dy;
+    //         d.y0 += d3.event.dx;
+    //         var node = d3.select(this);
+    //         node.attr("transform", "translate(" 
+    //             + (d.y0 - circlePositionY - circleRadius) + "," 
+    //             + (((d.x0 - circlePositionX) - circleRadius) + 8) + ")"); // Node position when start dragging
+    //         updateTempConnector();
+    //     }).on("dragend", function(d) {
+    //         if (d == root) {
+    //             return;
+    //         }
+    //         domNode = this;
+    //         if (selectedNode) {
+    //             // now remove the element from the parent, and insert it into the new elements children
+    //             var index = draggingNode.parent.children.indexOf(draggingNode);
+    //             if (index > -1) {
+    //                 draggingNode.parent.children.splice(index, 1);
+    //             }
+    //             if (typeof selectedNode.children !== 'undefined' || typeof selectedNode._children !== 'undefined') {
+    //                 if (typeof selectedNode.children !== 'undefined') {
+    //                     selectedNode.children.push(draggingNode);
+    //                 } else {
+    //                     selectedNode._children.push(draggingNode);
+    //                 }
+    //             } else {
+    //                 selectedNode.children = [];
+    //                 selectedNode.children.push(draggingNode);
+    //             }
+    //             // Make sure that the node being added to is expanded so user can see added node is correctly moved
+    //             expand(selectedNode);
+    //             sortTree();
+    //             endDrag();
+    //         } else {
+    //             endDrag();
+    //         }
+    //     });
 
-    function endDrag() {
-        selectedNode = null;
-        d3.selectAll('.ghostCircle').attr('class', 'ghostCircle');
-        d3.select(domNode).attr('class', 'node');
-        // now restore the mouseover event or we won't be able to drag a 2nd time
-        d3.select(domNode).select('.ghostCircle').attr('pointer-events', '');
-        updateTempConnector();
-        if (draggingNode !== null) {
-            update(root);
-            centerNode(draggingNode);
-            draggingNode = null;
-        }
-    }
+    // function endDrag() {
+    //     selectedNode = null;
+    //     d3.selectAll('.ghostCircle').attr('class', 'ghostCircle');
+    //     d3.select(domNode).attr('class', 'node');
+    //     // now restore the mouseover event or we won't be able to drag a 2nd time
+    //     d3.select(domNode).select('.ghostCircle').attr('pointer-events', '');
+    //     updateTempConnector();
+    //     if (draggingNode !== null) {
+    //         update(root);
+    //         centerNode(draggingNode);
+    //         draggingNode = null;
+    //     }
+    // }
 
     // Helper functions for collapsing and expanding nodes.
 
@@ -270,48 +296,57 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
         }
     }
 
-    var overCircle = function(d) {
+    var overGhostCircle = function(d) {
         selectedNode = d;
         updateTempConnector();
     };
-    var outCircle = function(d) {
+    var outGhostCircle = function(d) {
         selectedNode = null;
         updateTempConnector();
     };
 
-    // Function to update the temporary connector indicating dragging affiliation
-    var updateTempConnector = function() {
-        var data = [];
-        if (draggingNode !== null && selectedNode !== null) {
-            // have to flip the source coordinates since we did this for the existing connectors on the original tree
-            data = [{
-                source: {
-                    x: selectedNode.y0,
-                    y: selectedNode.x0
-                },
-                target: {
-                    x: draggingNode.y0,
-                    y: draggingNode.x0
-                }
-            }];
-        }
-        var link = svgGroup.selectAll(".templink").data(data);
 
-        link.enter().append("path")
-            .attr("class", "templink")
-            .attr("d", d3.svg.diagonal())
-            .attr('pointer-events', 'none');
-
-        link.attr("d", d3.svg.diagonal());
-
-        link.exit().remove();
+    var overNodeCircle = function(d) {
+        console.log("overNodeCircle");
+        alert("Oi, meu id é " + d.id);
     };
+    var outNodeCircle = function(d) {
+        console.log("outNodeCircle");
+    };
+
+    // Function to update the temporary connector indicating dragging affiliation
+    // var updateTempConnector = function() {
+    //     var data = [];
+    //     if (draggingNode !== null && selectedNode !== null) {
+    //         // have to flip the source coordinates since we did this for the existing connectors on the original tree
+    //         data = [{
+    //             source: {
+    //                 x: selectedNode.y0 - circleRadius + 6, // Valor mágico de correção
+    //                 y: selectedNode.x0
+    //             },
+    //             target: {
+    //                 x: draggingNode.y0 - circleRadius + 6, // Valor mágico de correção
+    //                 y: draggingNode.x0
+    //             }
+    //         }];
+    //     }
+    //     var link = svgGroup.selectAll(".templink").data(data);
+
+    //     link.enter().append("path")
+    //         .attr("class", "templink")
+    //         .attr("d", d3.svg.diagonal())
+    //         .attr('pointer-events', 'none');
+
+    //     link.attr("d", d3.svg.diagonal());
+
+    //     link.exit().remove();
+    // };
 
     // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
 
     function centerNode(source) {
         scale = zoomListener.scale();
-        x = -source.y0;
+        x = -source.y0; // Coordinates to center node
         y = -source.x0;
         x = x * scale + viewerWidth / 2;
         y = y * scale + viewerHeight / 2;
@@ -342,6 +377,8 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
         d = toggleChildren(d);
         update(d);
         centerNode(d);
+        console.log("click(d)");
+        //parent.document.getElementById("myFrame").reload();
     }
 
     function update(source) {
@@ -391,67 +428,65 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
             })
             .on('click', click);
 
-        // nodeEnter.append("image")
-        //     .attr('xlink:href', '/assets/foto.jpg')
-        //     .attr("x", -20)
-        //     .attr("y", -20)
-        //     .attr('width', '25px')
-        //     .attr('height', '25px')
-        //     .attr('margin-bottom', '30px')
-        //     ;
 
-        // var nodeEnterCircle = nodeEnter.append("circle")
+        var nodeDefs = nodeEnter.append('defs');
+        var nodeCirclePattern = nodeDefs.append('pattern')
+            .attr("id", "nodeImg")
+            .attr("patternUnits", "userSpaceOnUse")
+            .attr('width', imgPatternWidth + 'px')
+            .attr('height', imgPatternHeight + 'px');
+
+        nodeCirclePattern.append("image")
+            .attr('xlink:href', imgUrl)
+            .attr('width', imgImageWidth + 'px')
+            .attr('height', imgImageHeight + 'px');
+
         nodeEnter.append("circle")
-            .attr('class', 'nodeCircle')
-            .attr("r", 0)
-            .style("fill", function(d) {
-                return "#00000000" //d._children ? "lightsteelblue" : "#00ffffff";
+            .attr('class', function(d) {
+                return (d.children || d._children ? "circleParent" : "circleLeaf");
             })
-            .append('svg:pattern')
-            .attr('id', 'foto')
-            .attr('patternUnits', 'userSpaceOnUse')
-            .attr('width', '7')
-            .attr('height', '9')
-            .append('svg:image')
-            .attr('xlink:href', '/assets/foto.png')
-
-            .attr('x', 0)
-            .attr('y', 0)
-            .attr('width', 7)
-            .attr('height', 9);
-
-            // .append('svg:image')
-            // .attr('xlink:href', '/assets/foto.png')
-            // .attr('x', 0)
-            // .attr('y', 0)
-            // .attr('width', 6)
-            // .attr('height', 6);
-            
-
-        // nodeEnterCircle.append("image")
-        //     .attr('xlink:href', '/assets/foto.jpg')
-        //     .attr("x", -20)
-        //     .attr("y", -20)
-        //     .attr('width', '25px')
-        //     .attr('height', '25px')
-        //     .attr('margin-bottom', '30px');
-
-        
-
-
-        nodeEnter.append("text")
-            .attr("x", function(d) {
-                return d.children || d._children ? -10 : 10;
+            .attr("fill", "url(#nodeImg)")
+            .attr("r", imgCircleRadius + 'px')
+            .attr("cy", imgCircleCenterY + 'px')
+            .attr("cx", imgCircleCenterX + 'px')
+            .on("mouseover", function(node) {
+                overNodeCircle(node);
             })
-            .attr("dy", ".35em")
+            .on("mouseout", function(node) {
+                outNodeCircle(node);
+            });
+
+        // var nodeFilter = nodeDefs.append("filter")
+        //     .attr("x", "0")
+        //     .attr("y", "0")
+        //     .attr("width", "1")
+        //     .attr("height", "1")
+        //     .attr("id", "textBackground");
+
+        // nodeFilter.append("feFlood")
+        //     .attr("flood-opacity", "0.5")
+        //     .attr("flood-color", "#eee");
+        // nodeFilter.append("feComposite")
+        //     .attr("in", "SourceGraphic");
+
+        var nodeText = nodeEnter.append("text")
+            .attr("dy", "1.85em")
+            .attr("dx", "3.85em")
+            .attr("id", "nameText")
             .attr('class', 'nodeText')
-            .attr("text-anchor", function(d) {
-                return d.children || d._children ? "end" : "start";
-            })
+            .attr("text-anchor", "start")
+            // .attr("filter", "url(#textBackground"))
             .text(function(d) {
                 return d.name;
             })
             .style("fill-opacity", 0);
+
+        // nodeEnter.append("use")
+        //     .attr("fill", "black")
+        //     .attr("filter", "url(#textBackground)")
+        //     .attr('xlink:href', function(d) {
+        //         return "#nameText";
+        //     } );
 
         // phantom node to give us mouseover in a radius around it
         nodeEnter.append("circle")
@@ -461,36 +496,36 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
         .style("fill", "red")
             .attr('pointer-events', 'mouseover')
             .on("mouseover", function(node) {
-                overCircle(node);
+                overGhostCircle(node);
             })
             .on("mouseout", function(node) {
-                outCircle(node);
+                outGhostCircle(node);
             });
 
         // Update the text to reflect whether node has children or not.
-        node.select('text')
-            .attr("x", function(d) {
-                return d.children || d._children ? -10 : 10;
-            })
-            .attr("text-anchor", function(d) {
-                return d.children || d._children ? "end" : "start";
-            })
-            .text(function(d) {
-                return d.name;
-            });
+        // node.select('text')
+        //     .attr("x", -10)
+        //     .attr("text-anchor", function(d) {
+        //         return d.children || d._children ? "start" : "start";
+        //     })
+        //     .text(function(d) {
+        //         return d.name;
+        //     });
 
         // Change the circle fill depending on whether it has children and is collapsed
-        node.select("circle.nodeCircle")
-            .attr("r", circleRadius)
-            .style("fill", function(d) {
-                return d._children ? nodeCircleChildrenFill : nodeCircleNoChildrenFill;
-            });
+        // node.select("circle.nodeCircle")
+            // .style("fill", function(d) {
+            //     return d._children ? nodeCircleChildrenFill : nodeCircleNoChildrenFill;
+            // })
+            // .attr("class", function(d) {
+            //     return d._children ? circleClassParent : circleClassLeaf;
+            // });
 
         // Transition nodes to their new position.
         var nodeUpdate = node.transition()
             .duration(duration)
             .attr("transform", function(d) {
-                return "translate(" + d.y + "," + d.x + ")";
+                return "translate(" + (d.y - (circleDiameter/2) - circlePositionY) + "," + (d.x - (circleDiameter/2) + circlePositionX) + ")";
             });
 
         // Fade the text in
@@ -500,13 +535,13 @@ treeJSON = d3.json("assets/flare.json", function(error, treeData) {
         // Transition exiting nodes to the parent's new position.
         var nodeExit = node.exit().transition()
             .duration(duration)
-            .attr("transform", function(d) {
+            .attr("transform", function(d) { // Where the list of children will round up and disappear
                 return "translate(" + source.y + "," + source.x + ")";
             })
             .remove();
 
         nodeExit.select("circle")
-            .attr("r", 0);
+            .attr("r", 0); // Radius when circle start to be dragged
 
         nodeExit.select("text")
             .style("fill-opacity", 0);

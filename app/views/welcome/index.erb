@@ -9,12 +9,16 @@
       background-color:#EEE;
   }
    
-  .node circle {
-    fill: #00fffff;
+  .node .circleParent {
     stroke: steelblue;
-    stroke-width: 1.5px;
+    stroke-width: 2px;
   }
-   
+
+  .node .circleLeaf {
+    stroke: #339933;
+    stroke-width: 2px;
+  }
+
   .node image {
   	margin-top: 35px;
   	padding-bottom: 35px;
@@ -55,11 +59,18 @@
 
 <div id="testes">
 Testandoooo <br>
+
+<svg width="300" height="300">
+  <defs>
+    <pattern id="image" patternUnits="userSpaceOnUse" height="336" width="300">
+      <image x="0" y="0" height="300" width="267"         xlink:href="http://i.picresize.com/images/2014/06/10/8AJbu.jpg"></image>
+    </pattern>
+  </defs>
+  <circle id='top' cx="133" cy="133" r="133" fill="url(#image)" stroke="steelblue" stroke-width="1.5" />
+</svg>
+
   <svg width="700" height="660">
   <defs>
-      <filter id = "i1" x = "0%" y = "0%" width = "100%" height = "100%">
-        <feImage xlink:href = "/assets/foto.png"/>
-      </filter>
 
       <pattern id="innerImage" x="50" y="50" height="10" width="10">
         <image x="30" y="30" xlink:href='/assets/foto.jpg'></image>
@@ -71,8 +82,4 @@ Testandoooo <br>
 <br>
 Testandoooo mais um <br>
 
-
-<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-<script src="http://d3js.org/d3.v3.min.js"></script>
-<%= javascript_include_tag "dndTree", "data-turbolinks-track" => true %>
 
